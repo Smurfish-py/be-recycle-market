@@ -1,0 +1,31 @@
+{
+  "name": "be-recycle-market",
+  "version": "0.0.1",
+  "description": "Backend for Recycle Market Platform",
+  "keywords": [
+    "backend",
+    "recycle-market"
+  ],
+  "homepage": "https://github.com/Smurfish-py/be-recycle-market#readme",
+  "bugs": {
+    "url": "https://github.com/Smurfish-py/be-recycle-market/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Smurfish-py/be-recycle-market.git"
+  },
+  "license": "MIT",
+  "author": "Smurfish-py",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.16.2",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "prisma": "^6.16.2"
+  }
+}
