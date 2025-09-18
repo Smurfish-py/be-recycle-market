@@ -13,7 +13,83 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Test {
+model User {
   id Int @id @default(autoincrement())
-  nama_produk String
+  username String @db.VarChar(30)
+  email String @unique
+  password String
+  createdAt DateTime @default(now())
+  lastOnline DateTime @updatedAt
+  status String
+
+  // Relasi
+  privilege Privilege[] @relation("PrivilegeUser")
+  keranjang Keranjang[] @relation("KeranjangUser")
+  toko Toko[] @relation("Toko")
+  rating Rating[] @relation("Rating")
+}
+
+model Privilege {
+  id Int @id @default(autoincrement())
+  idUser Int
+
+  // Relasi
+  user User @relation("PrivilegeUser", fields: [idUser],references: [id])
+}
+
+model Keranjang {
+  id Int @id @default(autoincrement())
+  idUser Int
+  privilege String
+
+  // Relasi
+  user User @relation("KeranjangUser", fields: [idUser], references: [id])
+}
+
+model Toko {
+  id Int @id @default(autoincrement())
+  namaToko String @db.VarChar(30)
+  deskripsi String @db.VarChar(255)
+  filePfp String
+  fileBanner String
+  idUser Int
+
+  // Relasi
+  user User @relation("Toko", fields: [idUser], references: [id])
+  produk Produk[] @relation("Produk")
+}
+
+model Produk {
+  id Int @id @default(autoincrement())
+  nama String @db.VarChar(30)
+  deskripsi String @db.VarChar(255)
+  harga Int
+  deskripsiHarga String @db.VarChar(30)
+  idToko Int
+
+  // Relasi
+  toko Toko @relation("Produk", fields: [idToko], references: [id])
+  fotoProduk FotoProduk[] @relation("Foto")
+  rating Rating[] @relation("RatingProduk")
+}
+
+model FotoProduk {
+  id Int @id @default(autoincrement())
+  idProduk Int
+  file String
+
+  // Relasi
+  produk Produk @relation("Foto", fields: [idProduk], references: [id])
+}
+
+model Rating {
+  id Int @id @default(autoincrement())
+  idUser Int
+  idProduk Int
+  rating Int @db.TinyInt
+  komentar String @db.VarChar(255)
+
+  // Relasi
+  user User @relation("Rating", fields: [idUser], references: [id])
+  produk Produk @relation("RatingProduk", fields: [idProduk], references: [id])
 }
