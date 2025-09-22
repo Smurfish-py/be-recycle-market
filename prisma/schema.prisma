@@ -13,14 +13,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Status {
+  ACTIVE
+  BANNED
+}
+
 model User {
   id Int @id @default(autoincrement())
+  fullname String
   username String @db.VarChar(30)
   email String @unique
   password String
   createdAt DateTime @default(now())
-  lastOnline DateTime @updatedAt
-  status String
+  lastOnline DateTime?
+  status Status @default(ACTIVE)
 
   // Relasi
   privilege Privilege[] @relation("PrivilegeUser")
