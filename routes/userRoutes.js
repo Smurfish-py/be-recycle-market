@@ -4,6 +4,7 @@ const { PrismaClient } = require('@prisma/client');
 const router = express.Router();
 const prisma = new PrismaClient();
 
+
 router.get('/', async (req, res) => {
     try {
         const user = await prisma.user.findMany();
@@ -15,7 +16,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/data/:id', async (req, res) => {
     const id = req.params;
     try {
         const user = await prisma.user.findUnique({
@@ -33,7 +34,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-router.post('/', async (req, res) => {
+router.post('/create', async (req, res) => {
     const { fullname, username, email, password } = req.body;
     try {
         const userCheck = await prisma.user.findUnique({
@@ -63,7 +64,7 @@ router.post('/', async (req, res) => {
     }
 });
 
-router.patch('/:id', async (req, res) => {
+router.patch('/update/:id', async (req, res) => {
     const { id } = req.params;
     try {
         const userCheck = await prisma.user.findUnique({
@@ -86,7 +87,7 @@ router.patch('/:id', async (req, res) => {
     }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/delete/:id', async (req, res) => {
     const { id } = req.params;
     
     try {
