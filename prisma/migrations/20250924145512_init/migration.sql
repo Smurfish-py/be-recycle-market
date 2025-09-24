@@ -35,10 +35,11 @@ CREATE TABLE `Toko` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `namaToko` VARCHAR(30) NOT NULL,
     `deskripsi` VARCHAR(255) NOT NULL,
-    `filePfp` VARCHAR(191) NOT NULL,
-    `fileBanner` VARCHAR(191) NOT NULL,
+    `filePfp` VARCHAR(191) NULL,
+    `fileBanner` VARCHAR(191) NULL,
     `idUser` INTEGER NOT NULL,
 
+    UNIQUE INDEX `Toko_idUser_key`(`idUser`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -48,8 +49,10 @@ CREATE TABLE `Produk` (
     `nama` VARCHAR(30) NOT NULL,
     `deskripsi` VARCHAR(255) NOT NULL,
     `harga` INTEGER NOT NULL,
-    `deskripsiHarga` VARCHAR(30) NOT NULL,
+    `jenisHarga` ENUM('PCS', 'PAKET', 'LUSIN') NOT NULL,
+    `deskripsiHarga` VARCHAR(30) NULL,
     `idToko` INTEGER NOT NULL,
+    `kategori` ENUM('NON_ELEKTRONIK', 'ELEKTRONIK') NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

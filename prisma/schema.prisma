@@ -18,6 +18,23 @@ enum Status {
   BANNED
 }
 
+enum Kategori {
+  NON_ELEKTRONIK
+  ELEKTRONIK
+}
+
+enum JenisHarga {
+  PCS
+  PAKET
+  LUSIN
+}
+
+enum StatusProduk {
+  DALAM_PENINJAUAN
+  LOLOS
+  TIDAK_LOLOS
+}
+
 model User {
   id Int @id @default(autoincrement())
   fullname String
@@ -56,9 +73,9 @@ model Toko {
   id Int @id @default(autoincrement())
   namaToko String @db.VarChar(30)
   deskripsi String @db.VarChar(255)
-  filePfp String
-  fileBanner String
-  idUser Int
+  filePfp String?
+  fileBanner String?
+  idUser Int @unique
 
   // Relasi
   user User @relation("Toko", fields: [idUser], references: [id])
@@ -70,8 +87,11 @@ model Produk {
   nama String @db.VarChar(30)
   deskripsi String @db.VarChar(255)
   harga Int
-  deskripsiHarga String @db.VarChar(30)
+  jenisHarga JenisHarga
+  deskripsiHarga String? @db.VarChar(30)
   idToko Int
+  kategori Kategori
+  status StatusProduk @default(DALAM_PENINJAUAN)
 
   // Relasi
   toko Toko @relation("Produk", fields: [idToko], references: [id])
