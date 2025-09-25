@@ -41,6 +41,7 @@ model User {
   username String @db.VarChar(30)
   email String @unique
   password String
+  profilePfp String?
   createdAt DateTime @default(now())
   lastOnline DateTime?
   status Status @default(ACTIVE)
@@ -71,7 +72,7 @@ model Keranjang {
 
 model Toko {
   id Int @id @default(autoincrement())
-  namaToko String @db.VarChar(30)
+  nama String @db.VarChar(30)
   deskripsi String @db.VarChar(255)
   filePfp String?
   fileBanner String?

@@ -5,6 +5,7 @@ CREATE TABLE `User` (
     `username` VARCHAR(30) NOT NULL,
     `email` VARCHAR(191) NOT NULL,
     `password` VARCHAR(191) NOT NULL,
+    `profilePfp` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `lastOnline` DATETIME(3) NULL,
     `status` ENUM('ACTIVE', 'BANNED') NOT NULL DEFAULT 'ACTIVE',
@@ -33,7 +34,7 @@ CREATE TABLE `Keranjang` (
 -- CreateTable
 CREATE TABLE `Toko` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `namaToko` VARCHAR(30) NOT NULL,
+    `nama` VARCHAR(30) NOT NULL,
     `deskripsi` VARCHAR(255) NOT NULL,
     `filePfp` VARCHAR(191) NULL,
     `fileBanner` VARCHAR(191) NULL,
@@ -53,6 +54,7 @@ CREATE TABLE `Produk` (
     `deskripsiHarga` VARCHAR(30) NULL,
     `idToko` INTEGER NOT NULL,
     `kategori` ENUM('NON_ELEKTRONIK', 'ELEKTRONIK') NOT NULL,
+    `status` ENUM('DALAM_PENINJAUAN', 'LOLOS', 'TIDAK_LOLOS') NOT NULL DEFAULT 'DALAM_PENINJAUAN',
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
