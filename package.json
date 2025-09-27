@@ -19,9 +19,9 @@
   "type": "commonjs",
   "main": "server.mjs",
   "scripts": {
-    "start": "nodemon server",
+    "dev": "nodemon server",
     "lint": "eslint .",
-    "migrate": "prisma migrate dev --name init"
+    "migrate": "prisma migrate dev --name"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
