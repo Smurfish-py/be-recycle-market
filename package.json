@@ -1,6 +1,6 @@
 {
   "name": "be-recycle-market",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Backend for Recycle Market Platform",
   "keywords": [
     "backend",
@@ -17,12 +17,15 @@
   "license": "MIT",
   "author": "Smurfish-py",
   "type": "commonjs",
-  "main": "server.js",
+  "main": "server.mjs",
   "scripts": {
-    "lint": "eslint ."
+    "start": "nodemon server",
+    "lint": "eslint .",
+    "migrate": "prisma migrate dev --name init"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
+    "chalk": "^5.6.2",
     "express": "^5.1.0"
   },
   "devDependencies": {
@@ -31,6 +34,7 @@
     "@eslint/json": "^0.13.2",
     "eslint": "^9.36.0",
     "globals": "^16.4.0",
+    "nodemon": "^3.1.10",
     "prisma": "^6.16.2"
   }
 }
