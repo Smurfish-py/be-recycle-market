@@ -35,6 +35,12 @@ enum StatusProduk {
   TIDAK_LOLOS
 }
 
+enum MetodePembayaran {
+  LANGSUNG
+  TRANSFER
+  BARTER
+}
+
 model User {
   id Int @id @default(autoincrement())
   fullname String
@@ -51,6 +57,12 @@ model User {
   keranjang Keranjang[] @relation("KeranjangUser")
   toko Toko[] @relation("Toko")
   rating Rating[] @relation("Rating")
+
+  historiTransaksi Transaksi[] @relation("Transaksi")
+  historiIdPenjual Transaksi[] @relation("IdPenjual")
+  
+  historiPenjualan Penjualan[] @relation("Penjualan")
+  historiPenjualanIdPembeli Penjualan[] @relation("IdPembeli")
 }
 
 model Privilege {
@@ -98,6 +110,9 @@ model Produk {
   toko Toko @relation("Produk", fields: [idToko], references: [id])
   fotoProduk FotoProduk[] @relation("Foto")
   rating Rating[] @relation("RatingProduk")
+  historiTransaksi Transaksi[] @relation("Transaksi")
+  historiPenjualan Penjualan[] @relation("Penjualan")
+
 }
 
 model FotoProduk {
@@ -119,4 +134,35 @@ model Rating {
   // Relasi
   user User @relation("Rating", fields: [idUser], references: [id])
   produk Produk @relation("RatingProduk", fields: [idProduk], references: [id])
+}
+
+model Transaksi {
+  id Int @id @default(autoincrement())
+  idUser Int
+  idProduk Int
+  idPenjual Int
+  kuantitas Int
+  keterangan String @db.VarChar(255)
+  metode MetodePembayaran 
+  tanggal DateTime
+
+  // Relasi
+  user User @relation("Transaksi", fields: [idUser], references: [id])
+  produk Produk @relation("Transaksi", fields: [idProduk], references: [id])
+  penjual User @relation("IdPenjual", fields: [idPenjual], references: [id])
+}
+
+model Penjualan {
+  id Int @id @default(autoincrement())
+  idUser Int
+  idProduk Int
+  idPembeli Int
+  kuantitas Int
+  keterangan String @db.VarChar(255)
+  tanggal DateTime
+
+  // Relasi
+  user User @relation("Penjualan", fields: [idUser], references: [id])
+  produk Produk @relation("Penjualan", fields: [idProduk], references: [id])
+  penjual User @relation("IdPembeli", fields: [idPembeli], references: [id])
 }

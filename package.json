@@ -21,7 +21,8 @@
   "scripts": {
     "dev": "nodemon server",
     "lint": "eslint .",
-    "migrate": "prisma migrate dev --name"
+    "migrate/new": "prisma migrate dev --name",
+    "db/push": "prisma db push"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
