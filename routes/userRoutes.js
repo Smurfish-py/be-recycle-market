@@ -8,9 +8,9 @@ const prisma = new PrismaClient();
 router.get('/', async (req, res) => {
     try {
         const user = await prisma.user.findMany();
-        res.json(user);
-    } catch (err) {
-        console.error(err);
+        res.status(200).json(user);
+    } catch (error) {
+        console.error(error);
     } finally {
         await prisma.$disconnect();
     }
@@ -27,8 +27,8 @@ router.get('/data/:id', async (req, res) => {
             return res.status(404).json({ message: 'User tidak ditemukan :(' });
         }
         res.json(user);
-    } catch (err) {
-        res.status(500).send({ error: err.message });
+    } catch (error) {
+        res.status(500).send({ error: error });
     } finally {
         await prisma.$disconnect();
     }
@@ -57,8 +57,8 @@ router.post('/create', async (req, res) => {
         } else {
             return res.json({ message: "User sudah terdaftar!" });
         }
-    } catch (err) {
-        console.error({ error: err.message });
+    } catch (error) {
+        console.error({ error: error });
     } finally {
         await prisma.$disconnect()
     }
@@ -81,7 +81,7 @@ router.patch('/update/:id', async (req, res) => {
             res.status(404).json({ message: "User tidak ditemukan" });
         }
     } catch (error) {
-        console.error({ error: error.message });
+        console.error({ error: error});
     } finally {
         prisma.$disconnect();
     }
@@ -104,7 +104,7 @@ router.delete('/delete/:id', async (req, res) => {
             res.status(404).json({ message: "Gagal menghapus user, user tidak ditemukan!" });
         }
     } catch (error) {
-        console.error({ error: error.message });
+        console.error({ error: error });
     } finally {
         prisma.$disconnect();
     }

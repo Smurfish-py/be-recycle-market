@@ -10,7 +10,6 @@ router.get('/', async (req, res) => {
         res.json(toko);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Terjadi kesalahan pada server' });
     } finally {
         prisma.$disconnect();
     }
@@ -76,7 +75,7 @@ router.patch('/update/:id', async (req, res) => {
                 where: { id: Number(id) },
                 data: req.body
             });
-            res.json({ message: "Perubahan disimpan!" });
+            res.status(201).json({ message: "Perubahan disimpan!" });
         } else {
             res.status(404).json({ message: "Toko tidak ditemukan!" });
         }
