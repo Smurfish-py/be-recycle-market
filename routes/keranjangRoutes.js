@@ -27,7 +27,7 @@ router.post('/add', async (req, res) => {
         await prisma.keranjang.create({
             data: data
         });
-        res.json({ message: "data berhasil ditambahkan" });
+        res.status(201).json({ message: "data berhasil ditambahkan" });
     } catch (error) {
         console.error({ error: error });
     } finally {
@@ -54,7 +54,7 @@ router.delete('/delete/:id', async (req, res) => {
                 idProduk: Number(id)
             }
         });
-        res.json({ message: "Keranjang berhasil dikosongkan" });
+        res.status(200).json({ message: "Keranjang berhasil dikosongkan" });
     } catch (error) {
         console.error({ errpr: error });
     } finally {

@@ -5,11 +5,10 @@ const prisma = new PrismaClient();
 const router = express.Router();
 
 
-
 router.get('/', async (req, res)=> {
     try {
         const produk = await prisma.produk.findMany();
-        res.json(produk);
+        res.status(200).json(produk);
     } catch (error) {
         console.error({ error: error });
     } finally {
@@ -28,7 +27,7 @@ router.get('/data/:id', async (req, res) => {
         if (produk) {
             res.json(produk);
         } else {
-            res.status(404).json({ message: "Produk tidak ditemukan" });
+            res.status(204).json({ message: "Produk tidak ditemukan" });
         }
     } catch (error) {
         console.error({ error });
@@ -61,7 +60,7 @@ router.get('/kategori/:kategori', async (req, res) => {
         if (produk.length !== 0) {
             res.json(produk);
         } else {
-            res.status(404).json({ message: "Belum ada produk dengan kategori ini :(" });
+            res.status(204).json({ message: "Belum ada produk dengan kategori ini :(" });
         }
     } catch (error) {
         console.error({ error: error });
