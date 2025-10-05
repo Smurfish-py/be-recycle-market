@@ -11,7 +11,7 @@ router.get('/:id', async (req, res) => {
         const history = prisma.transaksi.findMany({
             where: { idUser: userId }
         });    
-        res.json(history);
+        res.status(200).json(history);
     } catch (error) {
         console.error({ error: error });
     } finally {
@@ -19,15 +19,20 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-router.post('/add/', async (req, res) => {
+router.post('/add', async (req, res) => {
     try {
-        await prisma.transaksi.create({
+        const tambahData = await prisma.transaksi.create({
             data: req.body,
         });
-        res.json({ message: "data berhasil ditambahkan" });
+
+        if (!tambahData) return res.status(400).json({ message:"Gagal menambahkan histori" });
+
+        res.status(201).json({ message: "data berhasil ditambahkan" });
     } catch (error) {
         console.error({ error: error });
     } finally {
         prisma.$disconnect();
     }
 });
+
+module.exports = router;
