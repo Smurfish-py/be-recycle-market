@@ -68,6 +68,7 @@ model User {
 model Privilege {
   id Int @id @default(autoincrement())
   idUser Int
+  privilege String
 
   // Relasi
   user User @relation("PrivilegeUser", fields: [idUser],references: [id])
@@ -76,7 +77,8 @@ model Privilege {
 model Keranjang {
   id Int @id @default(autoincrement())
   idUser Int
-  privilege String
+  idProduk Int
+  jumlah Int
 
   // Relasi
   user User @relation("KeranjangUser", fields: [idUser], references: [id])
