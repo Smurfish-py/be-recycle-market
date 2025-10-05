@@ -17,12 +17,12 @@ router.get('/', async (req, res)=> {
     }
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/data/:id', async (req, res) => {
     const { id } = req.params;
     try {
         const produk = await prisma.produk.findUnique({
             where: {
-                id: id
+                id: Number(id)
             }
         });
         if (produk) {
@@ -41,7 +41,7 @@ router.get('/toko/:id', async (req, res) => {
     const { id } = req.params;
     try {
         const produk = await prisma.produk.findMany({
-            where: { idToko: id },
+            where: { idToko: Number(id) },
             include: { user: true }
         });
         res.json(produk);
@@ -58,7 +58,7 @@ router.get('/kategori/:kategori', async (req, res) => {
         const produk = await prisma.produk.findMany({
             where: { kategori: kategori }
         });
-        if (produk) {
+        if (produk.length !== 0) {
             res.json(produk);
         } else {
             res.status(404).json({ message: "Belum ada produk dengan kategori ini :(" });

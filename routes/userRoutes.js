@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/data/:id', async (req, res) => {
-    const id = req.params;
+    const { id } = req.params;
     try {
         const user = await prisma.user.findUnique({
             where: { id: Number(id) },
@@ -26,9 +26,9 @@ router.get('/data/:id', async (req, res) => {
         if (!user) {
             return res.status(404).json({ message: 'User tidak ditemukan :(' });
         }
-        res.send(user);
+        res.json(user);
     } catch (err) {
-        res.status(500).error({ error: err.message });
+        res.status(500).send({ error: err.message });
     } finally {
         await prisma.$disconnect();
     }
