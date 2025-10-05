@@ -24,6 +24,10 @@ router.get('/data/:id', async (req, res) => {
                 id: Number(id)
             }
         });
+
+        if (!toko) {
+            return res.status(404).send({ message: "Toko tidak ditemukan" });
+        }
         res.json(toko);
     } catch (error) {
         console.error({ error: error });
@@ -49,7 +53,7 @@ router.post('/create', async (req, res) => {
                     idUser: idUser
                 }
             });
-            res.json({ message: "Toko telah berhasil di daftarkan!" });
+        res.json({ message: "Toko telah berhasil di daftarkan!" });
         } else {
             return res.status(400).json({ message: 'Toko sudah terdaftar' });
         }
@@ -64,7 +68,7 @@ router.patch('/update/:id', async (req, res) => {
     const { id } = req.params;
     try {
         const checkToko = await prisma.toko.findUnique({
-            where: { id: id }
+            where: { id: Number(id) }
         });
 
         if (checkToko) {
