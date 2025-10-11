@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors'; // => Cors berfungsi
 
 import user  from './routes/userRoutes.js';
 import produk from './routes/productRoutes.js';
@@ -10,6 +11,10 @@ import penjualan from './routes/historiPenjualanRoutes.js'
 const app = express();
 
 app.use(express.json());
+app.use(cors({
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PATCH", "DELETE"]
+}));
 
 app.use('/api/user', user);
 app.use('/api/produk', produk);
