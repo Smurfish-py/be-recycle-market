@@ -7,7 +7,15 @@ const router = express.Router();
 
 router.get('/', async (req, res)=> {
     try {
-        const produk = await prisma.produk.findMany();
+        const produk = await prisma.produk.findMany({
+            include: {
+                toko: {},
+                fotoProduk: {
+                    take: 1,
+                    orderBy: {id: 'asc'}
+                }
+            }
+        });
         res.status(200).json(produk);
     } catch (error) {
         console.error({ error: error });
