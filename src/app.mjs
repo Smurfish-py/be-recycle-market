@@ -12,7 +12,7 @@ import penjualan from './routes/historiPenjualanRoutes.js'
 import path from 'path';
 
 const app = express();
-const WEB_URL = process.env.WEB_URL.split(",");
+const WEB_URL = process.env.WEB_URL;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
