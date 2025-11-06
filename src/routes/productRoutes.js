@@ -14,7 +14,11 @@ router.get('/', async (req, res)=> {
                     take: 1,
                     orderBy: {id: 'asc'}
                 }
-            }
+            },
+            where: {
+                status: 'LOLOS'
+            },
+            orderBy: {id: 'desc'}
         });
         res.status(200).json(produk);
     } catch (error) {
@@ -30,6 +34,23 @@ router.get('/data/:id', async (req, res) => {
         const produk = await prisma.produk.findUnique({
             where: {
                 id: Number(id)
+            },
+            include: {
+                fotoProduk: {},
+                toko: {
+                    select: {
+                        nama: true
+                    }
+                },
+                rating: {
+                    include: {
+                        user: {
+                            select: {
+                                username: true
+                            }
+                        }
+                    }
+                }
             }
         });
         if (produk) {
