@@ -41,6 +41,12 @@ enum MetodePembayaran {
   BARTER
 }
 
+enum KualitasProduk {
+  BAGUS
+  MENENGAH
+  RUSAK
+}
+
 model User {
   id Int @id @default(autoincrement())
   fullname String
@@ -104,9 +110,13 @@ model Produk {
   harga Int
   jenisHarga JenisHarga
   deskripsiHarga String? @db.VarChar(30)
+  detail String @db.VarChar(1200)
+  stok Int
   idToko Int
   kategori Kategori
   status StatusProduk @default(DALAM_PENINJAUAN)
+  kualitas KualitasProduk
+  tanggalTambah DateTime @default(now())
 
   // Relasi
   toko Toko @relation("Produk", fields: [idToko], references: [id])
@@ -114,7 +124,6 @@ model Produk {
   rating Rating[] @relation("RatingProduk")
   historiTransaksi Transaksi[] @relation("Transaksi")
   historiPenjualan Penjualan[] @relation("Penjualan")
-
 }
 
 model FotoProduk {
