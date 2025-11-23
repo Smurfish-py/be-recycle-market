@@ -1,7 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
-import bcrypt, { hash } from 'bcryptjs';
+import bcrypt from 'bcryptjs';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -19,23 +19,32 @@ router.post('/login', async (req, res) => {
                     select: {
                         privilege: true
                     }
+                },
+                toko: {
+                    select: {
+                        id: true
+                    }
                 }
             }
         });
 
         if (!user) return res.status(404).json({ pesan: `Tidak ada user dengan email ${email}` });
-        if (!bcrypt.compare(password, user.password)) return res.json({ pesan: 'Password anda salah!' });
+
+        const valid = await bcrypt.compare(password, user.password);
+
+        if (!valid) return res.status(401).json({ pesan: 'Password anda salah!' });
 
         const token = jwt.sign({
             id: user.id,
             email,
             password,
-            privilege: user.privilege[0]?.privilege || null
+            privilege: user.privilege[0]?.privilege || null,
+            idToko: user.toko?.[0]?.id || null
         },
         JWT_SECRET,
         { expiresIn: '1h' });
 
-        return res.json({ token });
+        return res.json({ token      });
     } catch (error) {
         throw error;
     }
@@ -95,6 +104,13 @@ router.get('/data/:id', async (req, res) => {
     try {
         const user = await prisma.user.findUnique({
             where: { id: Number(id) },
+            include: {
+                privilege: {
+                    select: {
+                        privilege: true
+                    }
+                }
+            }
         });
 
         if (!user) {
@@ -102,7 +118,7 @@ router.get('/data/:id', async (req, res) => {
         }
         res.json(user);
     } catch (error) {
-        res.status(500).send({ error: error });
+        throw error;
     } finally {
         await prisma.$disconnect();
     }
