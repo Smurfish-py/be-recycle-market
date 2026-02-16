@@ -11,11 +11,18 @@ const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const uploadDir = path.join(__dirname, '..', 'img', 'products');
+const uploadDir = path.join(__dirname, '..', 'uploads', 'products');
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, uploadDir);
+        try {
+            if (!fs.existsSync(uploadDir)) {
+                fs.mkdirSync(uploadDir, { recursive: true });
+            }
+            cb(null, uploadDir);
+        } catch (error) {
+            cb(error);
+        }
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -44,8 +51,6 @@ router.get('/', async (req, res)=> {
         res.status(200).json(produk);
     } catch (error) {
         console.error({ error: error });
-    } finally {
-        prisma.$disconnect();
     }
 });
 
@@ -108,8 +113,6 @@ router.get('/data/:id', async (req, res) => {
         }
     } catch (error) {
         console.error({ error });
-    } finally {
-        prisma.$disconnect();
     }
 });
 
@@ -117,14 +120,32 @@ router.get('/toko/:id', async (req, res) => {
     const { id } = req.params;
     try {
         const produk = await prisma.produk.findMany({
-            where: { idToko: Number(id) },
-            include: {}
+            where: { 
+                idToko: Number(id) 
+            },
+            include: {
+                fotoProduk: {},
+                toko: {
+                    select: {
+                        id: true,
+                        nama: true,
+                        shopStatus: true
+                    }
+                },
+                rating: {
+                    include: {
+                        user: {
+                            select: {
+                                username: true
+                            }
+                        }
+                    }
+                }
+            }
         });
         res.json(produk);
     } catch (error) {
         console.error({ error: error });
-    } finally {
-        prisma.$disconnect();
     }
 });
 
@@ -147,14 +168,38 @@ router.get('/kategori/:kategori', async (req, res) => {
         });
         
         if (produk.length == 0) {
-            res.status(204).json({ pesan: "Belum ada produk dengan kategori ini :(" });
+            return res.status(204).json({ pesan: "Belum ada produk dengan kategori ini :(" });
         }
 
         res.json(produk);
     } catch (error) {
         throw error;
-    } finally {
-        prisma.$disconnect();
+    }
+});
+
+router.get('/count', async (req, res) => {
+    try {
+        const [ products, electronics, nonElectronics ] = await prisma.$transaction([
+            prisma.produk.count(),
+            prisma.produk.count({
+                where: {
+                    kategori: "ELEKTRONIK"
+                }
+            }),
+            prisma.produk.count({
+                where: {
+                    kategori: "NON_ELEKTRONIK"
+                }
+            }),
+        ]);
+
+        res.json({
+            products,
+            electronics,
+            nonElectronics
+        });
+    } catch (error) {
+        throw error;
     }
 });
 
@@ -193,14 +238,11 @@ router.post('/add', uploadImage.array('photoProduct', 5), async (req, res) => {
             }
         });
 
-        await prisma.fotoProduk.createMany({ data: files });
         res.json({ message: `Anda mendaftarkan ${produk.nama} untuk dijual. Kami akan meninjau terlebih dahulu sebelum benar-benar menjual barang anda.` });
         
     } catch (error) {
         console.log(error);
         throw error.message;
-    } finally {
-        prisma.$disconnect();
     }
 });
 
@@ -234,6 +276,86 @@ router.delete('/delete/:id', async (req, res) => {
         ]);
 
         res.json({ message: "Produk berhasil dihapus" });
+    } catch (error) {
+        throw error;
+    }
+});
+
+// Bookmark
+
+router.get('/bookmark/get/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const products = await prisma.markah.findMany({
+            where: {
+                idUser: Number(id),
+            },
+            include: {
+                user: true,
+                toko: true,
+                produk: {
+                    include: {
+                        fotoProduk: true,
+                    },
+                },
+            },
+        });
+
+        return res.json(products);
+    } catch (error) {
+        throw error;
+    }
+});
+
+router.get('/bookmark/check/:idUser/:idProduct', async (req, res) => {
+    const { idUser, idProduct } = req.params;
+
+    try {
+        const products = await prisma.markah.count({
+            where: {
+                idUser: Number(idUser),
+                idProduk: Number(idProduct)
+            }
+        });
+
+        res.json(products);
+    } catch (error) {
+        throw error;
+    }
+});
+
+router.post('/bookmark/add/:idUser/:idProduct/:idToko', async (req, res) => {
+    const { idUser, idProduct, idToko } = req.params;
+
+    try {
+        await prisma.markah.create({
+            data: {
+                idUser: Number(idUser),
+                idProduk: Number(idProduct),
+                idToko: Number(idToko)
+            }
+        });
+
+        return res.json({ msg: "Produk berhasil ditambahkan di markah" });
+    } catch (error) {
+        throw error;
+    }
+});
+
+router.delete('/bookmark/delete/:idUser/:idProduct/:idToko', async (req, res) => {
+    const { idUser, idProduct, idToko } = req.params;
+
+    try {
+        await prisma.markah.deleteMany({
+            where: {
+                idUser: Number(idUser),
+                idProduk: Number(idProduct),
+                idToko: Number(idToko)
+            }
+        })
+        
+        return res.json({ msg: "Produk berhasil dihapus dari markah" });
     } catch (error) {
         throw error;
     }
