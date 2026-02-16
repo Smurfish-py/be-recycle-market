@@ -47,6 +47,17 @@ enum KualitasProduk {
   RUSAK
 }
 
+enum PrivilegeUser {
+  ADMIN
+  PARTNER
+  DEFAULT
+}
+
+enum ShopRequest {
+  PENDING
+  APPROVE
+}
+
 model User {
   id Int @id @default(autoincrement())
   fullname String
@@ -75,8 +86,8 @@ model User {
 
 model Privilege {
   id Int @id @default(autoincrement())
-  idUser Int
-  privilege String
+  idUser Int @unique
+  privilege PrivilegeUser
 
   // Relasi
   user User @relation("PrivilegeUser", fields: [idUser],references: [id])
@@ -86,10 +97,15 @@ model Markah {
   id Int @id @default(autoincrement())
   idUser Int
   idProduk Int
+  idToko Int
 
-  // Relasi
   user User @relation("MarkahUser", fields: [idUser], references: [id])
+  produk Produk @relation("MarkahProduk", fields: [idProduk], references: [id])
+  toko Toko? @relation("MarkahToko", fields: [idToko], references: [id])
+
+  @@unique([idUser, idProduk])
 }
+
 
 model Toko {
   id Int @id @default(autoincrement())
@@ -98,10 +114,12 @@ model Toko {
   filePfp String?
   fileBanner String?
   idUser Int @unique
+  shopStatus ShopRequest @default(PENDING)
 
   // Relasi
   user User @relation("Toko", fields: [idUser], references: [id])
   produk Produk[] @relation("Produk")
+  markah Markah[] @relation("MarkahToko")
 }
 
 model Produk {
@@ -125,6 +143,7 @@ model Produk {
   rating Rating[] @relation("RatingProduk")
   historiTransaksi Transaksi[] @relation("Transaksi")
   historiPenjualan Penjualan[] @relation("Penjualan")
+  markah Markah[] @relation("MarkahProduk")
 }
 
 model FotoProduk {
@@ -132,7 +151,6 @@ model FotoProduk {
   idProduk Int
   file String
 
-  // Relasi
   produk Produk @relation("Foto", fields: [idProduk], references: [id])
 }
 
