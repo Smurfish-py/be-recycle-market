@@ -15,8 +15,6 @@ router.get('/:id', async (req, res) => {
         res.json(daftarKeranjang);
     } catch (error) {
         console.error({ error: error });
-    } finally {
-        prisma.$disconnect();
     }
 });
 
@@ -30,8 +28,6 @@ router.post('/add', async (req, res) => {
         res.status(201).json({ message: "data berhasil ditambahkan" });
     } catch (error) {
         console.error({ error: error });
-    } finally {
-        prisma.$disconnect();
     }
 });
 
@@ -41,8 +37,6 @@ router.delete('/delete', async (req, res) => {
         res.json({ message: "Keranjang berhasil dikosongkan" });
     } catch (error) {
         console.error({ errpr: error });
-    } finally {
-        prisma.$disconnect();
     }
 });
 
@@ -57,8 +51,6 @@ router.delete('/delete/:id', async (req, res) => {
         res.status(200).json({ message: "Keranjang berhasil dikosongkan" });
     } catch (error) {
         console.error({ errpr: error });
-    } finally {
-        prisma.$disconnect();
     }
 });
 
