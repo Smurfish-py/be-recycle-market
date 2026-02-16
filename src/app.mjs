@@ -28,7 +28,9 @@ app.use('/api/toko', toko);
 app.use('/api/keranjang', keranjang);
 app.use('/api/transaksi', transaksi);
 app.use('/api/penjualan', penjualan);
-app.use('/api/images/products', express.static(path.join(__dirname, 'img', 'products')));
-app.use('/api/images/users', express.static(path.join(__dirname, 'img', 'products')));
+app.use('/api/images/products', express.static(path.join(__dirname, 'uploads', 'products')));
+app.use('/api/images/users', express.static(path.join(__dirname, 'uploads', 'user', 'pfp')));
+app.use('/api/images/users/shop/pfp', express.static(path.join(__dirname, 'uploads', 'user', 'shop', 'pfp')));
+app.use('/api/images/users/shop/banner', express.static(path.join(__dirname, 'uploads', 'user', 'shop', 'banner')));
 
 export default app;
