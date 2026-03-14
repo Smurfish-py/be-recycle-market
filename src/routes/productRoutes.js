@@ -92,7 +92,8 @@ router.get('/data/:id', async (req, res) => {
                 fotoProduk: {},
                 toko: {
                     select: {
-                        nama: true
+                        nama: true,
+                        shopStatus: true
                     }
                 },
                 rating: {
