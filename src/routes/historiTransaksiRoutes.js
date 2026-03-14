@@ -8,12 +8,32 @@ router.get('/:id', async (req, res) => {
     const userId = req.params.id;
 
     try {
-        const history = prisma.transaksi.findMany({
-            where: { idUser: userId }
+        const history = await prisma.transaksi.findMany({
+            where: { idUser: Number(userId) },
+            include: {
+                produk: {
+                    select: {
+                        nama: true,
+                        harga: true,
+                        kategori: true
+                    }
+                },
+                penjual: {
+                    select: {
+                        fullname: true,
+                        toko: {
+                            select: { nama: true }
+                        }
+                    }
+                }
+            },
+            orderBy: {
+                tanggal: 'desc'
+            }
         });    
         res.status(200).json(history);
     } catch (error) {
-        console.error({ error: error });
+        res.status(500).json({ message: "Terjadi kesalahan server" });
     }
 });
 
@@ -27,13 +47,13 @@ router.post('/add', async (req, res) => {
 
         res.status(201).json({ message: "data berhasil ditambahkan" });
     } catch (error) {
-        console.error({ error: error });
+        res.status(500).json({ message: "Terjadi kesalahan server" });
     }
 });
 
 router.patch("/update/user/:id/item/:itemId", async (req, res) => {
     const { id, itemId } = req.params;
-    const data = req.data;
+    const data = req.body; // Perbaikan: req.data menjadi req.body
     try {
         const checkUser = await prisma.user.findUnique({
             where: {
@@ -46,8 +66,8 @@ router.patch("/update/user/:id/item/:itemId", async (req, res) => {
         } else {
             const hasil = await prisma.transaksi.update({ 
                 where: {
-                    idUser: id,
-                    idProduk: itemId
+                    idUser: Number(id),
+                    idProduk: Number(itemId)
                 },
                 data: data
             });
@@ -56,7 +76,7 @@ router.patch("/update/user/:id/item/:itemId", async (req, res) => {
             res.status(201).json({ message: "Data berhasil diubah" });
         }
     } catch (error) {
-        console.error(error);
+        res.status(500).json({ message: "Terjadi kesalahan server" });
     }
 });
 
@@ -68,7 +88,7 @@ router.delete('/delete', async (req, res) => {
 
         res.status(201).json({ message: "History berhasil dihapus" });
     } catch (error) {
-        console.error(error);
+        res.status(500).json({ message: "Terjadi kesalahan server" });
     }
 });
 
@@ -82,10 +102,10 @@ router.delete('/delete/user/:id/item/:itemId', async (req, res) => {
             }
         });
 
-        if (!checkTransaksi) {
+        if (!checkTransaksi || checkTransaksi.length === 0) {
             return res.status(404).json({ message: "History tidak ditemukan" });
         } else {
-            const hapusHistori = prisma.transaksi.deleteMany({
+            const hapusHistori = await prisma.transaksi.deleteMany({
                 where: {
                     idUser: Number(id),
                     idProduk: Number(itemId)
@@ -97,7 +117,7 @@ router.delete('/delete/user/:id/item/:itemId', async (req, res) => {
             res.status(201).json({ message: "Histori berhasil dihapus" });
         }
     } catch (error) {
-        console.error(error);
+        res.status(500).json({ message: "Terjadi kesalahan server" });
     }
 });
 
