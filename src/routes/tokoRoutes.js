@@ -5,9 +5,11 @@ import fs from 'fs';
 import express from 'express';
 import multer from 'multer';
 import jwt from 'jsonwebtoken';
+const {JWT_SECRET, TOKEN_DURATION} = process.env;
 
 const prisma = new PrismaClient();
 import { PrismaClient } from '@prisma/client';
+import { error } from 'console';
 
 const router = express.Router();
 
@@ -16,16 +18,22 @@ const __dirname = path.dirname(__filename);
 
 const uploadDir = path.join(__dirname, '..', 'uploads', 'user', 'shop', 'images');
 
-const {JWT_SECRET, TOKEN_DURATION} = process.env;
-
-
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         try {
-            if(!fs.existsSync(uploadDir)) {
-                fs.mkdirSync(uploadDir, { recursive: true });
+            let newDir;
+
+            if (file.fieldname === 'pfp') {
+                newDir = uploadDir + '/pfp'
+            } else if (file.fieldname === 'banner') {
+                newDir = uploadDir + '/banner'
             }
-            cb(null, uploadDir);
+
+            if(!fs.existsSync(newDir)) {
+                fs.mkdirSync(newDir, { recursive: true });
+            }
+
+            cb(null, newDir);
         } catch (error) {
             cb(error);
         }
@@ -164,6 +172,7 @@ router.patch('/update/:id', uploadImage.fields([
     { name: "banner", maxCount: 1 }
 ]), async (req, res) => {
     const { id } = req.params;
+    const { deskripsi } = req.body;
     try {
         const checkToko = await prisma.toko.findUnique({
             where: { id: Number(id) }
@@ -176,14 +185,31 @@ router.patch('/update/:id', uploadImage.fields([
         const pfp = req.files["pfp"] ? req.files["pfp"][0].filename : null;
         const banner = req.files["banner"] ? req.files["banner"][0].filename : null;
 
+        const pfpPath = path.join(uploadDir, 'pfp', checkToko?.filePfp);
+        const bannerPath = path.join(uploadDir, 'banner', checkToko?.fileBanner);
+
+        if (pfp && fs.existsSync(pfpPath)) {
+            fs.unlink(pfpPath, (error) => {
+                console.log("Gagal menghapus file foto lama, error: ", error);
+                return
+            });
+        }
+
+        if (banner && fs.existsSync(bannerPath)) {
+            fs.unlink(bannerPath, (error) => {
+                console.log("Gagal menghapus file banner lama, error: ", error);
+                return
+            });
+        }
+
         await prisma.toko.update({
             where: { 
                 id: Number(id)
             },
             data: {
-                filePfp: pfp,
-                fileBanner: banner,
-                ...req.body
+                ... (pfp && {filePfp: pfp}),
+                ... (banner && {fileBanner: banner}),
+                ... (deskripsi && {deskripsi})
             }
         });
         res.status(201).json({ message: "Perubahan disimpan!" });
