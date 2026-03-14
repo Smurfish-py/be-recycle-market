@@ -22,7 +22,8 @@
     "dev": "nodemon server",
     "lint": "eslint .",
     "migrate/new": "prisma migrate dev --name",
-    "db/push": "prisma db push"
+    "db/push": "prisma db push",
+    "make/admin": "prisma db seed"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
@@ -32,6 +33,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
+    "midtrans-client": "^1.4.3",
     "multer": "^2.0.2"
   },
   "devDependencies": {
