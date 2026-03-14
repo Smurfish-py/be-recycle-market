@@ -58,6 +58,12 @@ enum ShopRequest {
   APPROVE
 }
 
+enum StatusTransaksi {
+  PENDING
+  PAID
+  FAILED
+}
+
 model User {
   id Int @id @default(autoincrement())
   fullname String
@@ -172,9 +178,13 @@ model Transaksi {
   idProduk Int
   idPenjual Int
   kuantitas Int
+  harga Int
+  alamat String
+  kodePos Int
   keterangan String @db.VarChar(255)
   metode MetodePembayaran 
   tanggal DateTime
+  status StatusTransaksi @default(PENDING)
 
   // Relasi
   user User @relation("Transaksi", fields: [idUser], references: [id])
