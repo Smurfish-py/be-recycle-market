@@ -1,10 +1,12 @@
 import midtransClient from 'midtrans-client';
 import { PrismaClient } from '@prisma/client';
 
+const { SERVER_KEY } = process.env;
+
 const prisma = new PrismaClient();
 const snap = new midtransClient.Snap({
     isProduction: false,
-    serverKey: 'Mid-server-LdMytPI199FO36yQiT65yt86'
+    serverKey: SERVER_KEY
 });
 
 // ==========================================
