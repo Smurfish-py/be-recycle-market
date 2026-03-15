@@ -206,8 +206,9 @@ router.get('/count', async (req, res) => {
 
 router.post('/add', uploadImage.array('photoProduct', 5), async (req, res) => {
     const {
-        id,
-        nama,deskripsi,
+        id, // Ini adalah idToko yang dikirim dari frontend
+        nama,
+        deskripsi,
         harga,
         jenisHarga,
         deskripsiHarga,
@@ -218,32 +219,60 @@ router.post('/add', uploadImage.array('photoProduct', 5), async (req, res) => {
     } = req.body;
 
     try {
-        const produk = await prisma.produk.create({
-            data: {
-                nama,
-                deskripsi,
-                harga: Number(harga),
-                jenisHarga,
-                deskripsiHarga,
-                detail: detailProduk,
-                stok: Number(stok),
-                idToko: Number(id),
-                kategori,
-                status: "DALAM_PENINJAUAN",
-                kualitas,
-                fotoProduk: {
-                    create: req.files.map(photo => ({
-                        file: photo.filename,
-                    }))
-                }
-            }
+        // 1. Cari User ID berdasarkan Toko ID (Karena model Permintaan butuh idUser)
+        const toko = await prisma.toko.findUnique({
+            where: { id: Number(id) }
         });
 
-        res.json({ message: `Anda mendaftarkan ${produk.nama} untuk dijual. Kami akan meninjau terlebih dahulu sebelum benar-benar menjual barang anda.` });
+        if (!toko) {
+            return res.status(404).json({ message: "Toko tidak ditemukan" });
+        }
+
+        // 2. Gunakan transaction agar Produk dan Permintaan sukses dibuat bersamaan
+        const [produk, permintaan] = await prisma.$transaction(async (tx) => {
+            // A. Buat record Produk dengan status default DALAM_PENINJAUAN
+            const newProduk = await tx.produk.create({
+                data: {
+                    nama,
+                    deskripsi,
+                    harga: Number(harga),
+                    jenisHarga,
+                    deskripsiHarga,
+                    detail: detailProduk,
+                    stok: Number(stok),
+                    idToko: Number(id),
+                    kategori,
+                    status: "DALAM_PENINJAUAN",
+                    kualitas,
+                    fotoProduk: {
+                        create: req.files.map(photo => ({
+                            file: photo.filename,
+                        }))
+                    }
+                }
+            });
+
+            // B. Buat record Permintaan untuk dikirim ke Admin
+            const newPermintaan = await tx.permintaan.create({
+                data: {
+                    idUser: toko.idUser,
+                    tipe: "JUAL_PRODUK",
+                    idReferensi: newProduk.id, // Simpan ID produk di idReferensi
+                    keterangan: `Pengajuan produk baru untuk dijual: ${newProduk.nama}`
+                }
+            });
+
+            return [newProduk, newPermintaan];
+        });
+
+        res.status(200).json({ 
+            message: `Anda mendaftarkan ${produk.nama} untuk dijual. Kami akan meninjau terlebih dahulu sebelum benar-benar menjual barang anda.`,
+            requestStatus: "PENDING"
+        });
         
     } catch (error) {
         console.log(error);
-        throw error.message;
+        res.status(500).json({ message: "Terjadi kesalahan internal", error: error.message });
     }
 });
 
