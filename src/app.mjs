@@ -34,7 +34,7 @@ app.use('/api/keranjang', keranjang);
 app.use('/api/transaksi', transaksi);
 app.use('/api/penjualan', penjualan);
 app.post('/api/checkout', createTransaction);
-app.post('/api/midtrans-notification', midtransNotification); // Didaftarkan ke dashboard Midtrans
+app.post('/api/midtrans-notification', midtransNotification);
 app.get('/api/histori-transaksi/:id', getHistoriTransaksi);
 app.use('/api/images/products', express.static(path.join(__dirname, 'uploads', 'products')));
 app.use('/api/images/users', express.static(path.join(__dirname, 'uploads', 'user', 'pfp')));
