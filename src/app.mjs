@@ -9,6 +9,9 @@ import toko from './routes/tokoRoutes.js';
 import keranjang from './routes/keranjangRoutes.js';
 import transaksi from './routes/historiTransaksiRoutes.js';
 import penjualan from './routes/historiPenjualanRoutes.js';
+
+import requests from './routes/requestRoutes.js'; 
+
 import { 
     createTransaction, 
     midtransNotification, 
@@ -24,7 +27,7 @@ const __dirname = path.dirname(__filename);
 app.use(express.json());
 app.use(cors({
     origin: WEB_URL,
-    methods: ["GET", "POST", "PATCH", "DELETE"]
+    methods: ["GET", "POST", "PATCH", "DELETE", "PUT"]
 }));
 
 app.use('/api/user', user);
@@ -33,6 +36,10 @@ app.use('/api/toko', toko);
 app.use('/api/keranjang', keranjang);
 app.use('/api/transaksi', transaksi);
 app.use('/api/penjualan', penjualan);
+
+// ---> TAMBAHKAN ROUTE INI <---
+app.use('/api/requests', requests); 
+
 app.post('/api/checkout', createTransaction);
 app.post('/api/midtrans-notification', midtransNotification);
 app.get('/api/histori-transaksi/:id', getHistoriTransaksi);
