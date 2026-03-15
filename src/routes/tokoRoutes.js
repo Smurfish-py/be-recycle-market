@@ -7,9 +7,8 @@ import multer from 'multer';
 import jwt from 'jsonwebtoken';
 const {JWT_SECRET, TOKEN_DURATION} = process.env;
 
-const prisma = new PrismaClient();
 import { PrismaClient } from '@prisma/client';
-import { error } from 'console';
+const prisma = new PrismaClient();
 
 const router = express.Router();
 
@@ -89,6 +88,7 @@ router.get('/data/user/:id', async (req, res) => {
     }
 });
 
+// --- BAGIAN YANG DIPERBARUI: SISTEM PERMINTAAN ---
 router.post('/create', async (req, res) => {
     const { idUser, nama, deskripsi, noHp} = req.body;
     try {
@@ -99,46 +99,48 @@ router.post('/create', async (req, res) => {
         });
 
         if (checkToko < 1) {
-            await prisma.$transaction([
-                prisma.toko.create({
+            // Menggunakan Interactive Transaction karena kita butuh ID Toko 
+            // untuk dimasukkan ke tabel Permintaan secara berurutan
+            await prisma.$transaction(async (tx) => {
+                // 1. Buat Toko
+                const newToko = await tx.toko.create({
                     data: {
                         nama: nama,
                         deskripsi: deskripsi,
                         idUser: Number(idUser)
+                        // status otomatis PENDING berdasarkan schema Prisma Anda
                     }
-                }),
-                prisma.user.update({
-                    where: {
-                        id: Number(idUser)
-                    },
+                });
+
+                // 2. Update No Hp
+                await tx.user.update({
+                    where: { id: Number(idUser) },
+                    data: { noHp }
+                });
+
+                // 3. Masukkan ke Antrean Permintaan Admin
+                await tx.permintaan.create({
                     data: {
-                        noHp
+                        idUser: Number(idUser),
+                        tipe: "BUKA_TOKO",
+                        idReferensi: newToko.id
+                        // status otomatis PENDING
                     }
-                }),
-                prisma.privilege.update({
-                    where: {
-                        idUser: Number(idUser)
-                    },
-                    data: {
-                        privilege: "PARTNER"
-                    }
-                })
-            ]);
+                });
+
+            });
             
+            // Generate Token Baru (Tetap DEFAULT sampai disetujui admin)
             const user = await prisma.user.findUnique({
                 where: {
                     id: Number(idUser)
                 },
                 include: {
                     privilege: {
-                        select: {
-                            privilege: true
-                        }
+                        select: { privilege: true }
                     },
                     toko: {
-                        select: {
-                            id: true
-                        }
+                        select: { id: true }
                     }
                 }
             });
@@ -155,17 +157,19 @@ router.post('/create', async (req, res) => {
             );
 
             res.json({ 
-                message: "Toko telah berhasil di daftarkan!",
+                message: "Toko berhasil didaftarkan! Menunggu persetujuan Admin.",
                 token
             });
         
         } else {
-            return res.status(400).json({ message: 'Toko sudah terdaftar' });
+            return res.status(400).json({ message: 'Toko sudah terdaftar atau sedang dalam proses tinjauan.' });
         }
     } catch (error) {
         console.error({ error: error });
+        res.status(500).json({ message: "Terjadi kesalahan server", error: error.message });
     }
 });
+// ------------------------------------------------
 
 router.patch('/update/:id', uploadImage.fields([
     { name: "pfp", maxCount: 1},
@@ -173,6 +177,7 @@ router.patch('/update/:id', uploadImage.fields([
 ]), async (req, res) => {
     const { id } = req.params;
     const { deskripsi } = req.body;
+    
     try {
         const checkToko = await prisma.toko.findUnique({
             where: { id: Number(id) }
@@ -182,24 +187,25 @@ router.patch('/update/:id', uploadImage.fields([
             return res.status(404).json({ message: "Toko tidak ditemukan!" });
         }
 
-        const pfp = req.files["pfp"] ? req.files["pfp"][0].filename : null;
-        const banner = req.files["banner"] ? req.files["banner"][0].filename : null;
+        const pfp = req.files?.["pfp"] ? req.files["pfp"][0].filename : null;
+        const banner = req.files?.["banner"] ? req.files["banner"][0].filename : null;
 
-        const pfpPath = path.join(uploadDir, 'pfp', checkToko?.filePfp);
-        const bannerPath = path.join(uploadDir, 'banner', checkToko?.fileBanner);
-
-        if (pfp && fs.existsSync(pfpPath)) {
-            fs.unlink(pfpPath, (error) => {
-                console.log("Gagal menghapus file foto lama, error: ", error);
-                return
-            });
+        if (pfp && checkToko.filePfp) {
+            const pfpPath = path.join(uploadDir, 'pfp', checkToko.filePfp);
+            if (fs.existsSync(pfpPath)) {
+                fs.unlink(pfpPath, (error) => {
+                    if (error) console.log("Gagal menghapus file foto lama, error: ", error);
+                });
+            }
         }
 
-        if (banner && fs.existsSync(bannerPath)) {
-            fs.unlink(bannerPath, (error) => {
-                console.log("Gagal menghapus file banner lama, error: ", error);
-                return
-            });
+        if (banner && checkToko.fileBanner) {
+            const bannerPath = path.join(uploadDir, 'banner', checkToko.fileBanner);
+            if (fs.existsSync(bannerPath)) {
+                fs.unlink(bannerPath, (error) => {
+                    if (error) console.log("Gagal menghapus file banner lama, error: ", error);
+                });
+            }
         }
 
         await prisma.toko.update({
@@ -212,9 +218,12 @@ router.patch('/update/:id', uploadImage.fields([
                 ... (deskripsi && {deskripsi})
             }
         });
-        res.status(201).json({ message: "Perubahan disimpan!" });
+        
+        return res.status(200).json({ message: "Perubahan disimpan!" });
+
     } catch (error) {
-        console.error({ error: error });
+        console.error("Error saat update toko:", error);
+        return res.status(500).json({ message: "Terjadi kesalahan internal server", error: error.message });
     }
 });
 
