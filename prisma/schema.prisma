@@ -64,6 +64,17 @@ enum StatusTransaksi {
   FAILED
 }
 
+enum TipePermintaan {
+  BUKA_TOKO
+  JUAL_PRODUK
+}
+
+enum StatusPermintaan {
+  PENDING
+  DISETUJUI
+  DITOLAK
+}
+
 model User {
   id Int @id @default(autoincrement())
   fullname String
@@ -82,12 +93,10 @@ model User {
   markah Markah[] @relation("MarkahUser")
   toko Toko[] @relation("Toko")
   rating Rating[] @relation("Rating")
-
-  historiTransaksi Transaksi[] @relation("Transaksi")
-  historiIdPenjual Transaksi[] @relation("IdPenjual")
   
   historiPenjualan Penjualan[] @relation("Penjualan")
   historiPenjualanIdPembeli Penjualan[] @relation("IdPembeli")
+  permintaan Permintaan[] @relation("UserPermintaan")
 }
 
 model Privilege {
@@ -147,9 +156,21 @@ model Produk {
   toko Toko @relation("Produk", fields: [idToko], references: [id])
   fotoProduk FotoProduk[] @relation("Foto")
   rating Rating[] @relation("RatingProduk")
-  historiTransaksi Transaksi[] @relation("Transaksi")
   historiPenjualan Penjualan[] @relation("Penjualan")
   markah Markah[] @relation("MarkahProduk")
+}
+
+model Permintaan {
+  id Int @id @default(autoincrement())
+  idUser Int              
+  tipe TipePermintaan   
+  status StatusPermintaan @default(PENDING)
+  idReferensi Int            
+  keterangan String? @db.VarChar(255)
+  tanggal DateTime @default(now())
+
+  // Relasi
+  user User @relation("UserPermintaan", fields: [idUser], references: [id])
 }
 
 model FotoProduk {
@@ -185,11 +206,6 @@ model Transaksi {
   metode MetodePembayaran 
   tanggal DateTime
   status StatusTransaksi @default(PENDING)
-
-  // Relasi
-  user User @relation("Transaksi", fields: [idUser], references: [id])
-  produk Produk @relation("Transaksi", fields: [idProduk], references: [id])
-  penjual User @relation("IdPenjual", fields: [idPenjual], references: [id])
 }
 
 model Penjualan {
