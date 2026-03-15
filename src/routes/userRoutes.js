@@ -56,14 +56,16 @@ router.post('/login', async (req, res) => {
             }
         });
 
-        await prisma.user.update({
-            where: {
-                email
-            },
-            data: {
-                lastOnline: new Date()
-            }
-        });
+        if (user) {
+            await prisma.user.update({
+                where: {
+                    email
+                },
+                data: {
+                    lastOnline: new Date()
+                }
+            });
+        }
 
         if (!user) return res.status(404).json({ pesan: `Tidak ada user dengan email ${email}` });
 
