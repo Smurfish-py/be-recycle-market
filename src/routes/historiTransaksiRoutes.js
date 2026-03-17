@@ -4,6 +4,20 @@ import { PrismaClient } from '@prisma/client';
 const router = express.Router();
 const prisma = new PrismaClient();
 
+router.get('/all/admin', async (req, res) => {
+    try {
+        const allTransactions = await prisma.transaksi.findMany({
+            orderBy: {
+                tanggal: 'desc' // Urutkan dari yang terbaru
+            }
+        });
+        res.status(200).json(allTransactions);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Terjadi kesalahan server saat mengambil semua transaksi" });
+    }
+});
+
 router.get('/:id', async (req, res) => {
     const userId = req.params.id;
 
