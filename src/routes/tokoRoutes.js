@@ -46,6 +46,121 @@ const storage = multer.diskStorage({
 
 const uploadImage = multer({ storage });
 
+router.get('/all/admin', async (req, res) => {
+    try {
+        const shops = await prisma.toko.findMany({
+            include: {
+                user: {
+                    select: {
+                        fullname: true,
+                        email: true
+                    }
+                }
+            },
+            orderBy: {
+                id: 'desc'
+            }
+        });
+        res.status(200).json(shops);
+    } catch (error) {
+        res.status(500).json({ message: "Gagal mengambil data toko", error: error.message });
+    }
+});
+
+// 2. Ubah status toko (APPROVE / PENDING)
+router.patch('/:id/status', async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body; // Status yang dikirim: 'APPROVE' atau 'PENDING'
+
+    try {
+        const updatedShop = await prisma.toko.update({
+            where: { id: Number(id) },
+            data: { shopStatus: status }
+        });
+
+        // Jika toko di-approve, pastikan pemiliknya mendapatkan privilege PARTNER
+        if (status === 'APPROVE') {
+            await prisma.privilege.upsert({
+                where: { idUser: updatedShop.idUser },
+                update: { privilege: 'PARTNER' },
+                create: { idUser: updatedShop.idUser, privilege: 'PARTNER' }
+            });
+        } 
+        // Jika dijadikan PENDING kembali, ubah privilege-nya kembali ke DEFAULT
+        else if (status === 'PENDING') {
+            await prisma.privilege.upsert({
+                where: { idUser: updatedShop.idUser },
+                update: { privilege: 'DEFAULT' },
+                create: { idUser: updatedShop.idUser, privilege: 'DEFAULT' }
+            });
+        }
+
+        res.status(200).json({ message: `Status toko berhasil diubah menjadi ${status}` });
+    } catch (error) {
+        res.status(500).json({ message: "Gagal mengubah status toko", error: error.message });
+    }
+});
+
+router.get('/detail/admin/:id', async (req, res) => {
+    try {
+        const tokoId = Number(req.params.id);
+        const toko = await prisma.toko.findUnique({
+            where: { id: tokoId },
+            include: {
+                user: {
+                    select: { id: true, fullname: true, email: true, noHp: true }
+                },
+                produk: {
+                    select: { id: true, nama: true, harga: true, status: true }
+                }
+            }
+        });
+
+        if (!toko) return res.status(404).json({ message: "Toko tidak ditemukan" });
+        res.status(200).json(toko);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Terjadi kesalahan saat mengambil detail toko" });
+    }
+});
+
+// 2. Endpoint untuk menghapus toko (Hard Delete)
+router.delete('/delete/:id', async (req, res) => {
+    const tokoId = Number(req.params.id);
+
+    try {
+        // Ambil semua produk milik toko ini
+        const produkToko = await prisma.produk.findMany({
+            where: { idToko: tokoId },
+            select: { id: true }
+        });
+        const idProdukArray = produkToko.map(p => p.id);
+
+        // Gunakan transaction untuk menghapus secara berurutan agar tidak kena error Foreign Key
+        await prisma.$transaction([
+            // Hapus Markah (Bookmark) terkait toko ini
+            prisma.markah.deleteMany({ where: { idToko: tokoId } }),
+            
+            // Hapus Foto Produk dari produk-produk milik toko ini
+            prisma.fotoProduk.deleteMany({ where: { idProduk: { in: idProdukArray } } }),
+            
+            // Hapus Rating dari produk-produk toko ini
+            prisma.rating.deleteMany({ where: { idProduk: { in: idProdukArray } } }),
+            
+            // Hapus semua produk milik toko
+            prisma.produk.deleteMany({ where: { idToko: tokoId } }),
+            
+            // Terakhir, hapus tokonya
+            prisma.toko.delete({ where: { id: tokoId } })
+        ]);
+
+        res.status(200).json({ message: "Toko beserta produknya berhasil dihapus secara permanen." });
+    } catch (error) {
+        console.error("Error menghapus toko:", error);
+        res.status(500).json({ message: "Gagal menghapus toko karena ada data yang terkait." });
+    }
+});
+
 router.get('/', async (req, res) => {
     try {
         const toko = await prisma.toko.findMany();
