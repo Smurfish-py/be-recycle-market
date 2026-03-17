@@ -276,17 +276,11 @@ router.post('/add', uploadImage.array('photoProduct', 5), async (req, res) => {
     }
 });
 
-// Pastikan Anda mengimpor modul 'path' dan 'fs' di bagian atas file
-// const path = require('path');
-// const fs = require('fs');
-
 router.delete('/delete/:id', async (req, res) => {
     const { id } = req.params;
     
     try {
         const productId = Number(id);
-
-        // 1. Cek dulu apakah produknya ada di database
         const productExist = await prisma.produk.findUnique({
             where: { id: productId }
         });
@@ -295,21 +289,18 @@ router.delete('/delete/:id', async (req, res) => {
             return res.status(404).json({ pesan: "Produk tidak ditemukan" });
         }
 
-        // 2. Ambil data foto yang terkait dengan produk
         const photos = await prisma.fotoProduk.findMany({
             where: { idProduk: productId }
         });
 
-        // 3. Hapus data di database menggunakan transaction
-        // (Lakukan database deletion dulu sebelum menghapus file fisik untuk mencegah inkonsistensi)
         await prisma.$transaction([
             prisma.fotoProduk.deleteMany({
-                where: { idProduk: Number(productId) }
+                where: { idProduk: productId}
             }),
-            prisma.produk.delete({
+            prisma.produk.deleteMany({
                 where: { id: Number(productId) }
             }),
-            prisma.markah.delete({
+            prisma.markah.deleteMany({
                 where: { idProduk: Number(productId) }
             }),
             
@@ -322,19 +313,14 @@ router.delete('/delete/:id', async (req, res) => {
                     fs.unlinkSync(filePath);
                 } catch (err) {
                     console.error(`Gagal menghapus file ${filePath}:`, err);
-                    // Kita catch error fs agar tidak membuat API crash 
-                    // jika file tiba-tiba tidak bisa diakses
                 }
             }
         });
-
-        // 5. Kembalikan respon sukses ke Frontend (SANGAT PENTING)
         return res.status(200).json({ 
             pesan: "Produk dan foto berhasil dihapus" 
         });
 
     } catch (error) {
-        // 6. Tangani error database atau server
         console.error("Error menghapus produk:", error);
         return res.status(500).json({ 
             pesan: "Terjadi kesalahan internal server", 
