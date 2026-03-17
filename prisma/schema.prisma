@@ -97,6 +97,9 @@ model User {
   historiPenjualan Penjualan[] @relation("Penjualan")
   historiPenjualanIdPembeli Penjualan[] @relation("IdPembeli")
   permintaan Permintaan[] @relation("UserPermintaan")
+
+  historiTransaksi Transaksi[] @relation("Transaksi")
+  historiIdPenjual Transaksi[] @relation("IdPenjual")
 }
 
 model Privilege {
@@ -158,6 +161,8 @@ model Produk {
   rating Rating[] @relation("RatingProduk")
   historiPenjualan Penjualan[] @relation("Penjualan")
   markah Markah[] @relation("MarkahProduk")
+
+  historiTransaksi Transaksi[] @relation("Transaksi")
 }
 
 model Permintaan {
@@ -200,12 +205,23 @@ model Transaksi {
   idPenjual Int
   kuantitas Int
   harga Int
+  
+  // --- Data Snapshot Pembeli / Pengiriman ---
+  nama String        // Baru ditambahkan
+  email String       // Baru ditambahkan
+  noHp String        // Baru ditambahkan
   alamat String
-  kodePos Int
+  kodePos String     // Diubah dari Int menjadi String agar lebih aman
+  // ------------------------------------------
+
   keterangan String @db.VarChar(255)
   metode MetodePembayaran 
   tanggal DateTime
   status StatusTransaksi @default(PENDING)
+
+  user User @relation("Transaksi", fields: [idUser], references: [id])
+  produk Produk @relation("Transaksi", fields: [idProduk], references: [id])
+  penjual User @relation("IdPenjual", fields: [idPenjual], references: [id])
 }
 
 model Penjualan {
