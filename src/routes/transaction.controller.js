@@ -40,21 +40,27 @@ export const createTransaction = async (req, res) => {
             data: {
                 idUser: parseInt(userId),
                 idProduk: produk.id,
-                idPenjual: produk.toko.idUser, // Didapat otomatis dari relasi Toko
+                idPenjual: produk.toko.idUser,
                 kuantitas: qty,
                 harga: totalBayar,
+                
+                // Data Pembeli langsung dimasukkan dari req.body
+                nama: nama,
+                email: email,
+                noHp: noHp,
                 alamat: alamat,
-                kodePos: parseInt(kodePos),
+                kodePos: kodePos, // Tidak perlu parseInt() lagi karena di schema sudah String
                 keterangan: deskripsi || "",
+                
                 metode: jenisHarga === 'COD' ? 'LANGSUNG' : 'TRANSFER',
                 tanggal: new Date(),
-                // status: 'PENDING' // Pastikan Anda sudah menambahkan kolom ini di schema.prisma
             }
         });
 
-        // Format Order ID untuk Midtrans (Ubah Int jadi String)
-        const orderIdMidtrans = `TRX-${transaksi.id}`;
+        // Format Order ID untuk Midtrans (Tambahkan Date.now() agar selalu unik)
+        const orderIdMidtrans = `TRX-${transaksi.id}-${Date.now()}`;
 
+        // Jika COD, transaksi langsung berhasil tanpa perlu Midtrans
         if (jenisHarga === 'COD') {
             return res.status(200).json({ success: true, orderId: orderIdMidtrans });
         }
@@ -79,7 +85,7 @@ export const createTransaction = async (req, res) => {
         // 5. Minta Token Midtrans
         const parameter = {
             transaction_details: {
-                order_id: orderIdMidtrans, // Contoh: "TRX-5"
+                order_id: orderIdMidtrans, 
                 gross_amount: totalBayar
             },
             customer_details: {
@@ -92,7 +98,12 @@ export const createTransaction = async (req, res) => {
 
         const transactionMidtrans = await snap.createTransaction(parameter);
 
-        return res.status(200).json({ success: true, token: transactionMidtrans.token, orderId: orderIdMidtrans });
+        // Kembalikan token ke frontend untuk membuka popup Snap
+        return res.status(200).json({ 
+            success: true, 
+            token: transactionMidtrans.token, 
+            orderId: orderIdMidtrans 
+        });
 
     } catch (error) {
         console.error("Error createTransaction:", error);
@@ -113,26 +124,25 @@ export const midtransNotification = async (req, res) => {
 
         const idTransaksi = parseInt(orderIdString.split('-')[1]); 
 
-        let statusPesanan = 'PENDING';
-
-        if (transactionStatus === 'capture' || transactionStatus === 'settlement') {
-            if (fraudStatus === 'accept') {
-                statusPesanan = 'PAID'; 
-            }
-        } else if (transactionStatus === 'cancel' || transactionStatus === 'deny' || transactionStatus === 'expire') {
-            statusPesanan = 'FAILED'; 
+        // Jika transaksi dibatalkan, ditolak, atau kedaluwarsa: HAPUS DARI DATABASE
+        if (transactionStatus === 'cancel' || transactionStatus === 'deny' || transactionStatus === 'expire') {
+            await prisma.transaksi.delete({
+                where: { id: idTransaksi }
+            });
+            console.log(`[HAPUS] Transaksi TRX-${idTransaksi} dihapus karena batal/kedaluwarsa.`);
+            return res.status(200).json({ status: "deleted" });
         }
 
-        // 1. UPDATE STATUS TRANSAKSI
-        const transaksiUpdate = await prisma.transaksi.update({
-            where: { id: idTransaksi },
-            data: { status: statusPesanan }
-        });
+        // Jika berhasil dibayar
+        if ((transactionStatus === 'capture' || transactionStatus === 'settlement') && fraudStatus === 'accept') {
+            
+            // 1. UPDATE STATUS TRANSAKSI JADI PAID
+            const transaksiUpdate = await prisma.transaksi.update({
+                where: { id: idTransaksi },
+                data: { status: 'PAID' }
+            });
 
-        // 2. JIKA LUNAS, TAMBAHKAN KE TABEL PENJUALAN
-        if (statusPesanan === 'PAID') {
-            // Cek dulu apakah sudah ada di tabel Penjualan agar tidak duplikat 
-            // (karena Midtrans kadang mengirim notifikasi yang sama lebih dari sekali)
+            // 2. TAMBAHKAN KE TABEL PENJUALAN
             const cekPenjualan = await prisma.penjualan.findFirst({
                 where: {
                     idProduk: transaksiUpdate.idProduk,
@@ -142,7 +152,6 @@ export const midtransNotification = async (req, res) => {
             });
 
             if (!cekPenjualan) {
-                // Sesuai skema Anda: idUser = Penjual, idPembeli = User yang beli
                 await prisma.penjualan.create({
                     data: {
                         idUser: transaksiUpdate.idPenjual, 
@@ -191,5 +200,22 @@ export const getHistoriTransaksi = async (req, res) => {
     } catch (error) {
         console.error("Error getHistori:", error);
         return res.status(500).json({ message: "Gagal mengambil histori" });
+    }
+};
+
+export const cancelTransactionManual = async (req, res) => {
+    try {
+        // Ambil ID transaksi dari parameter (misal: "TRX-15-171000000")
+        const orderIdString = req.params.orderId; 
+        const idTransaksi = parseInt(orderIdString.split('-')[1]);
+
+        await prisma.transaksi.delete({
+            where: { id: idTransaksi }
+        });
+
+        return res.status(200).json({ message: "Transaksi berhasil dibatalkan dan dihapus" });
+    } catch (error) {
+        // Jika data sudah terhapus, biarkan saja
+        return res.status(500).json({ message: "Gagal atau sudah dihapus" });
     }
 };
