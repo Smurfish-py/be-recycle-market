@@ -15,7 +15,8 @@ import requests from './routes/requestRoutes.js';
 import { 
     createTransaction, 
     midtransNotification, 
-    getHistoriTransaksi 
+    getHistoriTransaksi,
+    cancelTransactionManual 
 } from './routes/transaction.controller.js';
 import path from 'path';
 
@@ -43,6 +44,7 @@ app.use('/api/requests', requests);
 app.post('/api/checkout', createTransaction);
 app.post('/api/midtrans-notification', midtransNotification);
 app.get('/api/histori-transaksi/:id', getHistoriTransaksi);
+app.delete('/api/checkout/cancel/:orderId', cancelTransactionManual);
 app.use('/api/images/products', express.static(path.join(__dirname, 'uploads', 'products')));
 app.use('/api/images/users', express.static(path.join(__dirname, 'uploads', 'user', 'pfp')));
 app.use('/api/images/users/shop/pfp', express.static(path.join(__dirname, 'uploads', 'user', 'shop', 'images', 'pfp')));
