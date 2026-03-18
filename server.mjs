@@ -7,6 +7,6 @@ let PORT = process.env.PORT;
 app.listen(PORT, () => {
     console.log(`
         \n ${chalk.bold.bgWhite('[+]')}${chalk.bgBlue.black(` Server berjalan di http://localhost:${PORT} `)}
-        \n ${chalk.bold('Contoh penggunaan API :')} http://localhost:3000/api/user/1
+        \n ${chalk.bold('Contoh penggunaan API :')} http://localhost:3000/api/user/1 atau http://[ip-anda]:3000/api/user/1
     `);
 });
