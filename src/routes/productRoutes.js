@@ -100,7 +100,8 @@ router.get('/data/:id', async (req, res) => {
                     include: {
                         user: {
                             select: {
-                                username: true
+                                username: true,
+                                profilePfp: true
                             }
                         }
                     }
