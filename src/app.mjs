@@ -39,8 +39,6 @@ app.use('/api/keranjang', keranjang);
 app.use('/api/transaksi', transaksi);
 app.use('/api/penjualan', penjualan);
 app.use('/api/rating', rating);
-
-// ---> TAMBAHKAN ROUTE INI <---
 app.use('/api/requests', requests); 
 
 app.post('/api/checkout', createTransaction);

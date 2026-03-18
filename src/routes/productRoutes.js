@@ -207,7 +207,7 @@ router.get('/count', async (req, res) => {
 
 router.post('/add', uploadImage.array('photoProduct', 5), async (req, res) => {
     const {
-        id, // Ini adalah idToko yang dikirim dari frontend
+        id,
         nama,
         deskripsi,
         harga,
@@ -220,7 +220,6 @@ router.post('/add', uploadImage.array('photoProduct', 5), async (req, res) => {
     } = req.body;
 
     try {
-        // 1. Cari User ID berdasarkan Toko ID (Karena model Permintaan butuh idUser)
         const toko = await prisma.toko.findUnique({
             where: { id: Number(id) }
         });
@@ -229,9 +228,7 @@ router.post('/add', uploadImage.array('photoProduct', 5), async (req, res) => {
             return res.status(404).json({ message: "Toko tidak ditemukan" });
         }
 
-        // 2. Gunakan transaction agar Produk dan Permintaan sukses dibuat bersamaan
         const [produk, permintaan] = await prisma.$transaction(async (tx) => {
-            // A. Buat record Produk dengan status default DALAM_PENINJAUAN
             const newProduk = await tx.produk.create({
                 data: {
                     nama,
@@ -253,7 +250,6 @@ router.post('/add', uploadImage.array('photoProduct', 5), async (req, res) => {
                 }
             });
 
-            // B. Buat record Permintaan untuk dikirim ke Admin
             const newPermintaan = await tx.permintaan.create({
                 data: {
                     idUser: toko.idUser,
