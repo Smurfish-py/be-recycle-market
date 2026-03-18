@@ -6,18 +6,20 @@ const prisma = new PrismaClient();
 
 router.get('/user/:id', async (req, res) => {
     const { id } = req.params;
+    const parsedId = Number(id);
+
+    if (isNaN(parsedId)) {
+        return res.status(400).json({ msg: "ID User tidak valid" });
+    }
 
     try {
         const response = await prisma.rating.findMany({
-            where: {
-                idUser: Number(id)
-            }
-        })
-
+            where: { idUser: parsedId }
+        });
         res.json(response);
     } catch (error) {
-        console.log(error);
-        res.status(500).json({msg: "Terjadi kesalahan"})
+        console.error(error);
+        res.status(500).json({ msg: "Terjadi kesalahan" });
     }
 });
 
@@ -25,29 +27,46 @@ router.post('/:idProduct/:idUser', async (req, res) => {
     const { idProduct, idUser } = req.params;
     const { rating, komentar } = req.body;
 
+    // 1. VALIDASI PARAMETER
+    const parsedIdProduct = Number(idProduct);
+    const parsedIdUser = Number(idUser);
+    const parsedRating = Number(rating);
+
+    // Cek apakah ada yang NaN (Not a Number)
+    if (isNaN(parsedIdProduct) || isNaN(parsedIdUser)) {
+        return res.status(400).json({ msg: "ID Produk atau ID User tidak valid. Pastikan Anda sudah login." });
+    }
+
+    if (isNaN(parsedRating)) {
+        return res.status(400).json({ msg: "Rating harus berupa angka." });
+    }
+
     try {
+        // 2. CEK KETERSEDIAAN USER DAN PRODUK
         const user = await prisma.user.findUnique({
-            where: { id: Number(idUser) }
+            where: { id: parsedIdUser }
         });
 
         const product = await prisma.produk.findUnique({
-            where: { id: Number(idProduct) }
+            where: { id: parsedIdProduct }
         });
 
-        if (user && product) {
-            const tambahRating = await prisma.rating.create({
-                data: {
-                    idUser: Number(idUser),
-                    idProduk: Number(idProduct),
-                    rating: Number(rating),
-                    komentar
-                }
-            });
+        if (!user) return res.status(404).json({ msg: "User tidak ditemukan" });
+        if (!product) return res.status(404).json({ msg: "Produk tidak ditemukan" });
 
-            if (!tambahRating) return res.json({msg: "rating gagal ditambahkan"});
-            
-            res.json({msg: "Rating berhasil ditambahkan!"});
-        }
+        // 3. SIMPAN RATING
+        const tambahRating = await prisma.rating.create({
+            data: {
+                idUser: parsedIdUser,
+                idProduk: parsedIdProduct,
+                rating: parsedRating,
+                komentar: komentar || "" // Pastikan string kosong jika tidak ada komentar
+            }
+        });
+
+        if (!tambahRating) return res.status(400).json({ msg: "Rating gagal ditambahkan" });
+        
+        return res.status(200).json({ msg: "Rating berhasil ditambahkan!" });
         
     } catch (error) {
         console.error("Error saat menambah rating:", error);
@@ -57,21 +76,24 @@ router.post('/:idProduct/:idUser', async (req, res) => {
 
 router.delete("/delete/:id", async (req, res) => {
     const { id } = req.params;
+    const parsedId = Number(id);
+
+    if (isNaN(parsedId)) {
+        return res.status(400).json({ msg: "ID tidak valid" });
+    }
 
     try {
         const response = await prisma.rating.deleteMany({
-            where: {
-                idUser: Number(id)
-            }
-        })
+            where: { idUser: parsedId }
+        });
 
-        if (!response) return res.status(500).json({msg: "Terjadi kesalahan dalam menghapus ulasan"});
+        if (!response) return res.status(400).json({ msg: "Terjadi kesalahan dalam menghapus ulasan" });
 
-        res.json({msg: "Berhasil menghapus ulasan!"});
+        res.json({ msg: "Berhasil menghapus ulasan!" });
     } catch (error) {
-        console.log(error);
-        res.status(500).json({msg: "Terjadi kesalahan dalam menghapus ulasan"})
+        console.error(error);
+        res.status(500).json({ msg: "Terjadi kesalahan dalam menghapus ulasan" });
     }
-})
+});
 
 export default router;
