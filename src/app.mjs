@@ -9,6 +9,7 @@ import toko from './routes/tokoRoutes.js';
 import keranjang from './routes/keranjangRoutes.js';
 import transaksi from './routes/historiTransaksiRoutes.js';
 import penjualan from './routes/historiPenjualanRoutes.js';
+import rating from './routes/ratingRoutes.js';
 
 import requests from './routes/requestRoutes.js'; 
 
@@ -37,6 +38,7 @@ app.use('/api/toko', toko);
 app.use('/api/keranjang', keranjang);
 app.use('/api/transaksi', transaksi);
 app.use('/api/penjualan', penjualan);
+app.use('/api/rating', rating);
 
 // ---> TAMBAHKAN ROUTE INI <---
 app.use('/api/requests', requests); 
