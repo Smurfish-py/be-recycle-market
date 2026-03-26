@@ -292,15 +292,24 @@ router.delete('/delete/:id', async (req, res) => {
 
         await prisma.$transaction([
             prisma.fotoProduk.deleteMany({
-                where: { idProduk: productId}
+                where: { idProduk: productId }
             }),
-            prisma.produk.deleteMany({
-                where: { id: Number(productId) }
+            prisma.rating.deleteMany({
+                where: { idProduk: Number(productId) }
+            }),
+            prisma.penjualan.deleteMany({
+                where: { idProduk: Number(productId) }
+            }),
+            prisma.transaksi.deleteMany({
+                where: { idProduk: Number(productId) }
             }),
             prisma.markah.deleteMany({
                 where: { idProduk: Number(productId) }
             }),
             
+            prisma.produk.deleteMany({
+                where: { id: Number(productId) }
+            }),
         ]);
 
         photos.forEach(photo => {
