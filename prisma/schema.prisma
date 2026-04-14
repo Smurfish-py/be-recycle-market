@@ -75,6 +75,14 @@ enum StatusPermintaan {
   DITOLAK
 }
 
+enum StatusPengiriman {
+  MENUNGGU
+  DIPERSIAPKAN
+  PENGEMASAN
+  PENGANTARAN
+  SAMPAI_TUJUAN
+}
+
 model User {
   id Int @id @default(autoincrement())
   fullname String
@@ -207,17 +215,20 @@ model Transaksi {
   harga Int
   
   // --- Data Snapshot Pembeli / Pengiriman ---
-  nama String        // Baru ditambahkan
-  email String       // Baru ditambahkan
-  noHp String        // Baru ditambahkan
+  nama String        
+  email String       
+  noHp String        
   alamat String
-  kodePos String     // Diubah dari Int menjadi String agar lebih aman
+  kodePos String     
   // ------------------------------------------
 
   keterangan String @db.VarChar(255)
   metode MetodePembayaran 
   tanggal DateTime
   status StatusTransaksi @default(PENDING)
+
+  // ---> FIELD BARU UNTUK STATUS PENGIRIMAN <---
+  statusPengiriman StatusPengiriman @default(MENUNGGU) 
 
   user User @relation("Transaksi", fields: [idUser], references: [id])
   produk Produk @relation("Transaksi", fields: [idProduk], references: [id])
