@@ -65,9 +65,35 @@ router.post('/add', async (req, res) => {
     }
 });
 
+// ---> ENDPOINT BARU UNTUK UPDATE STATUS PENGIRIMAN <---
+router.patch('/:id/shipping', async (req, res) => {
+    const { id } = req.params;
+    const { statusPengiriman } = req.body;
+
+    try {
+        // Update field statusPengiriman di tabel Transaksi
+        const updateTransaksi = await prisma.transaksi.update({
+            where: { 
+                id: Number(id) 
+            },
+            data: { 
+                statusPengiriman: statusPengiriman 
+            }
+        });
+
+        res.status(200).json({ 
+            message: "Status pengiriman berhasil diperbarui", 
+            data: updateTransaksi 
+        });
+    } catch (error) {
+        console.error("Error update shipping status:", error);
+        res.status(500).json({ message: "Terjadi kesalahan server saat mengupdate status pengiriman" });
+    }
+});
+
 router.patch("/update/user/:id/item/:itemId", async (req, res) => {
     const { id, itemId } = req.params;
-    const data = req.body; // Perbaikan: req.data menjadi req.body
+    const data = req.body; 
     try {
         const checkUser = await prisma.user.findUnique({
             where: {
@@ -78,14 +104,14 @@ router.patch("/update/user/:id/item/:itemId", async (req, res) => {
         if (!checkUser) {
             return res.status(404).json({ message: "User tidak ditemukan" })
         } else {
-            const hasil = await prisma.transaksi.update({ 
+            const hasil = await prisma.transaksi.updateMany({ 
                 where: {
                     idUser: Number(id),
                     idProduk: Number(itemId)
                 },
                 data: data
             });
-            if (!hasil) return res.status(400).json({ message: "Gagal update user" });
+            if (!hasil || hasil.count === 0) return res.status(400).json({ message: "Gagal update user" });
 
             res.status(201).json({ message: "Data berhasil diubah" });
         }
