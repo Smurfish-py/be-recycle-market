@@ -213,21 +213,17 @@ model Transaksi {
   idPenjual Int
   kuantitas Int
   harga Int
-  
-  // --- Data Snapshot Pembeli / Pengiriman ---
   nama String        
   email String       
   noHp String        
   alamat String
   kodePos String     
-  // ------------------------------------------
 
   keterangan String @db.VarChar(255)
   metode MetodePembayaran 
   tanggal DateTime
   status StatusTransaksi @default(PENDING)
 
-  // ---> FIELD BARU UNTUK STATUS PENGIRIMAN <---
   statusPengiriman StatusPengiriman @default(MENUNGGU) 
 
   user User @relation("Transaksi", fields: [idUser], references: [id])
