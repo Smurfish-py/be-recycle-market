@@ -27,12 +27,10 @@ router.post('/:idProduct/:idUser', async (req, res) => {
     const { idProduct, idUser } = req.params;
     const { rating, komentar } = req.body;
 
-    // 1. VALIDASI PARAMETER
     const parsedIdProduct = Number(idProduct);
     const parsedIdUser = Number(idUser);
     const parsedRating = Number(rating);
 
-    // Cek apakah ada yang NaN (Not a Number)
     if (isNaN(parsedIdProduct) || isNaN(parsedIdUser)) {
         return res.status(400).json({ msg: "ID Produk atau ID User tidak valid. Pastikan Anda sudah login." });
     }
@@ -42,7 +40,6 @@ router.post('/:idProduct/:idUser', async (req, res) => {
     }
 
     try {
-        // 2. CEK KETERSEDIAAN USER DAN PRODUK
         const user = await prisma.user.findUnique({
             where: { id: parsedIdUser }
         });
@@ -54,13 +51,12 @@ router.post('/:idProduct/:idUser', async (req, res) => {
         if (!user) return res.status(404).json({ msg: "User tidak ditemukan" });
         if (!product) return res.status(404).json({ msg: "Produk tidak ditemukan" });
 
-        // 3. SIMPAN RATING
         const tambahRating = await prisma.rating.create({
             data: {
                 idUser: parsedIdUser,
                 idProduk: parsedIdProduct,
                 rating: parsedRating,
-                komentar: komentar || "" // Pastikan string kosong jika tidak ada komentar
+                komentar: komentar || ""
             }
         });
 
@@ -87,11 +83,10 @@ router.delete("/delete/:idProduct/:idUser", async (req, res) => {
         const response = await prisma.rating.deleteMany({
             where: { 
                 idUser: parsedIdUser,
-                idProduk: parsedIdProduct // Menambahkan filter idProduk
+                idProduk: parsedIdProduct 
             }
         });
 
-        // Mengecek apakah ada data yang berhasil terhapus
         if (response.count === 0) return res.status(400).json({ msg: "Ulasan tidak ditemukan atau sudah terhapus" });
 
         res.json({ msg: "Berhasil menghapus ulasan!" });
