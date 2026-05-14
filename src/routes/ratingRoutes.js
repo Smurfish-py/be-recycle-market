@@ -74,20 +74,25 @@ router.post('/:idProduct/:idUser', async (req, res) => {
     }
 });
 
-router.delete("/delete/:id", async (req, res) => {
-    const { id } = req.params;
-    const parsedId = Number(id);
+router.delete("/delete/:idProduct/:idUser", async (req, res) => {
+    const { idProduct, idUser } = req.params;
+    const parsedIdProduct = Number(idProduct);
+    const parsedIdUser = Number(idUser);
 
-    if (isNaN(parsedId)) {
-        return res.status(400).json({ msg: "ID tidak valid" });
+    if (isNaN(parsedIdProduct) || isNaN(parsedIdUser)) {
+        return res.status(400).json({ msg: "ID Produk atau ID User tidak valid" });
     }
 
     try {
         const response = await prisma.rating.deleteMany({
-            where: { idUser: parsedId }
+            where: { 
+                idUser: parsedIdUser,
+                idProduk: parsedIdProduct // Menambahkan filter idProduk
+            }
         });
 
-        if (!response) return res.status(400).json({ msg: "Terjadi kesalahan dalam menghapus ulasan" });
+        // Mengecek apakah ada data yang berhasil terhapus
+        if (response.count === 0) return res.status(400).json({ msg: "Ulasan tidak ditemukan atau sudah terhapus" });
 
         res.json({ msg: "Berhasil menghapus ulasan!" });
     } catch (error) {
@@ -95,5 +100,4 @@ router.delete("/delete/:id", async (req, res) => {
         res.status(500).json({ msg: "Terjadi kesalahan dalam menghapus ulasan" });
     }
 });
-
 export default router;
