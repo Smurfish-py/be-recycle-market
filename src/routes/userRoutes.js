@@ -6,6 +6,7 @@ import multer from 'multer';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -85,7 +86,7 @@ router.post('/login', async (req, res) => {
 
         return res.json({ token });
     } catch (error) {
-        throw error;
+        return res.status(500).json({ status: false, pesan: error.message });
     }
 });
 
@@ -93,7 +94,6 @@ router.post('/register', async (req, res) => {
     const { fullname, email, password } = req.body;
 
     try {
-
         const user = await prisma.user.findUnique({
             where: {
                 email
@@ -104,12 +104,15 @@ router.post('/register', async (req, res) => {
 
         const hashed = await bcrypt.hash(password, 10);
         
+        const generatedRecoveryCode = crypto.randomBytes(6).toString('hex').toUpperCase();
+
         const addUser = await prisma.user.create({
             data: {
                 fullname,
                 username: fullname,
                 password: hashed,
                 email,
+                recoveryCode: generatedRecoveryCode, 
                 privilege: {
                     create: {
                         privilege: 'DEFAULT'
@@ -118,12 +121,16 @@ router.post('/register', async (req, res) => {
             }
         });
 
-        if (!addUser) return res.json({ status: true, pesan: "Gagal mendaftarkan" });
+        if (!addUser) return res.status(400).json({ status: false, pesan: "Gagal mendaftarkan" });
 
-        return res.status(201).json({ status: true, pesan: "Pendaftaran berhasil, silakan login!" });
+        return res.status(201).json({ 
+            status: true, 
+            pesan: "Pendaftaran berhasil!", 
+            recoveryCode: generatedRecoveryCode 
+        });
 
     } catch (error) {
-        throw error;
+        return res.status(500).json({ status: false, pesan: error.message });
     }
 });
 
@@ -140,7 +147,7 @@ router.get('/', async (req, res) => {
         });
         res.status(200).json(user);
     } catch (error) {
-        throw error;
+        return res.status(500).json({ status: false, pesan: error.message });
     }
 });
 
@@ -163,7 +170,7 @@ router.get('/data/:id', async (req, res) => {
         }
         res.json(user);
     } catch (error) {
-        throw error;
+        return res.status(500).json({ status: false, pesan: error.message });
     }
 });
 
@@ -188,7 +195,7 @@ router.get('/privilege/:privilege', async (req, res) => {
 
         res.json(user);
     } catch (error) {
-        throw error;
+        return res.status(500).json({ status: false, pesan: error.message });
     }
 });
 
@@ -220,7 +227,7 @@ router.get('/count', async (req, res) => {
             defaultUsers
         });
     } catch (error) {
-        throw error;
+        return res.status(500).json({ status: false, pesan: error.message });
     }
 });
 
@@ -234,12 +241,16 @@ router.post('/create', async (req, res) => {
         });
 
         if (!userCheck) {
+            const hashed = await bcrypt.hash(password, 10);
+            const generatedRecoveryCode = crypto.randomBytes(6).toString('hex').toUpperCase();
+
             const userBaru = await prisma.user.create({
                 data: {
                     fullname: fullname,
                     username: username,
                     email: email,
-                    password: password
+                    password: hashed,
+                    recoveryCode: generatedRecoveryCode
                 }
             });
 
@@ -248,7 +259,7 @@ router.post('/create', async (req, res) => {
             return res.json({ message: "User sudah terdaftar!" });
         }
     } catch (error) {
-        console.error({ error: error });
+        return res.status(500).json({ status: false, pesan: error.message });
     }
 });
 
@@ -259,11 +270,10 @@ router.patch('/update/:id', uploadImage.single('profilePfp'), async (req, res) =
             where: {id: Number(id)}
         });
 
-        const { profilePfp } = user;
-        const photoPath = uploadDir.concat(`/${profilePfp}`);
-        console.log(photoPath);
-
         if (user) {
+            const { profilePfp } = user;
+            const photoPath = uploadDir.concat(`/${profilePfp}`);
+
             await prisma.user.update({
                 where: { 
                     id: Number(id) 
@@ -274,42 +284,113 @@ router.patch('/update/:id', uploadImage.single('profilePfp'), async (req, res) =
                 },
             });
 
-            if (fs.existsSync(photoPath)) {
+            if (req?.file && profilePfp && fs.existsSync(photoPath)) {
                 fs.unlink(photoPath, (error) => {
                     if (error) {
-                        console.log('Gagal menghapus file: ', error);
+                        console.log('Gagal menghapus file lama: ', error);
                         return;
                     };
                 });
-            };
+            }
 
             res.json({ message: "Data berhasil diubah!" });
         } else {
             res.status(404).json({ message: "User tidak ditemukan" });
         }
     } catch (error) {
-        console.error({ error: error});
+        return res.status(500).json({ status: false, pesan: error.message });
     }
 });
 
 router.delete('/delete/:id', async (req, res) => {
     const { id } = req.params;
+    const userId = Number(id);
     
     try {
-        const userCheck = prisma.user.findUnique({
-            where: {id: Number(id)}
+        const userCheck = await prisma.user.findUnique({
+            where: { id: userId }
         });
 
-        if (userCheck) {
-            await prisma.user.delete({
-                where: {id: Number(id)}
-            });
-            res.send({ message: "Sedih rasanya melihat anda pergi, Senang mengenal Anda!" });
-        } else {
-            res.status(404).json({ message: "Gagal menghapus user, user tidak ditemukan!" });
+        if (!userCheck) {
+            return res.status(404).json({ message: "Gagal menghapus user, user tidak ditemukan!" });
         }
+
+        // Gunakan $transaction untuk memastikan semua relasi terhapus bersamaan dengan aman
+        await prisma.$transaction([
+            // 1. Hapus privilege hak akses user
+            prisma.privilege.deleteMany({ where: { idUser: userId } }),
+            
+            // 2. Hapus produk yang disimpan di Wishlist/Markah oleh user ini
+            prisma.markah.deleteMany({ where: { idUser: userId } }),
+            
+            // 3. Hapus ulasan/rating yang pernah ditulis oleh user ini
+            prisma.rating.deleteMany({ where: { idUser: userId } }),
+            
+            // 4. Hapus permintaan pembukaan toko atau verifikasi produk dari user ini
+            prisma.permintaan.deleteMany({ where: { idUser: userId } }),
+
+            // 5. Hapus Toko jika user tersebut merupakan owner/partner toko
+            prisma.toko.deleteMany({ where: { idUser: userId } }),
+
+            // 6. Terakhir, hapus data inti User setelah semua foreign key bersih
+            prisma.user.delete({
+                where: { id: userId }
+            })
+        ]);
+
+        return res.send({ message: "Sedih rasanya melihat anda pergi, Senang mengenal Anda!" });
+        
     } catch (error) {
-        console.error({ error: error });
+        return res.status(500).json({ status: false, pesan: error.message });
+    }
+});
+
+router.post('/verify-recovery', async (req, res) => {
+    const { email, recoveryCode } = req.body;
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { email }
+        });
+
+        if (!user) {
+            return res.status(404).json({ status: false, pesan: "Email tidak terdaftar" });
+        }
+
+        if (!user.recoveryCode || user.recoveryCode !== recoveryCode) {
+            return res.status(400).json({ status: false, pesan: "Kode pemulihan salah atau tidak valid" });
+        }
+
+        // Jika berhasil cocok, kirimkan userId ke frontend untuk keamanan langkah reset berikutnya
+        return res.status(200).json({ status: true, userId: user.id, pesan: "Kode cocok" });
+
+    } catch (error) {
+        return res.status(500).json({ status: false, pesan: error.message });
+    }
+});
+
+// Endpoint 2: Mengeksekusi Update Password Baru setelah terverifikasi
+router.post('/reset-password', async (req, res) => {
+    const { id, password } = req.body;
+
+    try {
+        const hashed = await bcrypt.hash(password, 10);
+
+        // Generate ulang kode pemulihan baru agar kode lama tidak bisa digunakan kembali demi keamanan
+        const newRecoveryCode = crypto.randomBytes(6).toString('hex').toUpperCase();
+
+        await prisma.user.update({
+            where: { id: Number(id) },
+            data: {
+                password: hashed,
+                recoveryCode: newRecoveryCode // Ganti kode lama demi keamanan sekali pakai
+            }
+        });
+
+        return res.status(200).json({ status: true, pesan: "Password berhasil diperbarui" });
+
+    } catch (error) {
+        return res.status(500).json({ status: false, pesan: error.message });
     }
 });
 
