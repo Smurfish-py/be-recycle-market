@@ -27,6 +27,9 @@ enum JenisHarga {
   PCS
   PAKET
   LUSIN
+  KILOGRAM
+  GRAM
+  METER
 }
 
 enum StatusProduk {
@@ -89,6 +92,7 @@ model User {
   username String @db.VarChar(30)
   email String @unique
   password String
+  recoveryCode String? 
   profilePfp String?
   noHp String?
   alamat String?
